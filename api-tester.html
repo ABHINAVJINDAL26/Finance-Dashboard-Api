@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finance Dashboard API Tester</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #0a0a0f;
+      --surface: #111118;
+      --card: #16161f;
+      --border: #1e1e2e;
+      --accent: #6c63ff;
+      --accent2: #00d4aa;
+      --danger: #ff4d6a;
+      --warning: #ffaa00;
+      --success: #00d4aa;
+      --text: #e8e8f0;
+      --muted: #666680;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 20px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+    }
+    .logo-text { font-size: 18px; font-weight: 700; color: var(--text); }
+    .logo-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .status-pill {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(0,212,170,0.1);
+      border: 1px solid rgba(0,212,170,0.3);
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 12px; font-weight: 500;
+      color: var(--accent2);
+      cursor: pointer;
+    }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent2); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+    .container { display: grid; grid-template-columns: 280px 1fr; height: calc(100vh - 73px); }
+
+    .sidebar {
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      padding: 16px;
+    }
+
+    .section-label {
+      font-size: 10px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 1.5px; color: var(--muted);
+      padding: 12px 8px 6px;
+    }
+
+    .endpoint-btn {
+      display: flex; align-items: center; gap: 10px;
+      width: 100%; padding: 10px 12px;
+      background: transparent; border: none;
+      border-radius: 8px; cursor: pointer;
+      color: var(--text); font-family: 'Inter', sans-serif;
+      font-size: 13px; text-align: left;
+      transition: all 0.15s;
+      margin-bottom: 2px;
+    }
+    .endpoint-btn:hover { background: var(--card); }
+    .endpoint-btn.active { background: rgba(108,99,255,0.15); border: 1px solid rgba(108,99,255,0.3); }
+
+    .method-badge {
+      font-size: 9px; font-weight: 700; padding: 2px 6px;
+      border-radius: 4px; min-width: 38px; text-align: center;
+    }
+    .GET { background: rgba(0,212,170,0.15); color: #00d4aa; }
+    .POST { background: rgba(108,99,255,0.15); color: #6c63ff; }
+    .PATCH { background: rgba(255,170,0,0.15); color: #ffaa00; }
+    .DELETE { background: rgba(255,77,106,0.15); color: #ff4d6a; }
+
+    .main { display: flex; flex-direction: column; overflow: hidden; }
+
+    .auth-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 12px 24px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .auth-bar label { font-size: 12px; color: var(--muted); white-space: nowrap; }
+    .auth-select {
+      padding: 6px 12px; border-radius: 6px;
+      background: var(--card); border: 1px solid var(--border);
+      color: var(--text); font-family: 'Inter', sans-serif; font-size: 12px;
+      cursor: pointer;
+    }
+    .login-btn {
+      padding: 6px 16px; border-radius: 6px;
+      background: linear-gradient(135deg, var(--accent), #5a52d5);
+      border: none; color: white; font-size: 12px; font-weight: 600;
+      cursor: pointer; transition: opacity 0.2s;
+    }
+    .login-btn:hover { opacity: 0.85; }
+    .token-display {
+      flex: 1; padding: 6px 10px; border-radius: 6px;
+      background: var(--card); border: 1px solid var(--border);
+      color: var(--accent2); font-size: 11px; font-family: monospace;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+
+    .content { display: grid; grid-template-columns: 1fr 1fr; flex: 1; overflow: hidden; }
+
+    .request-panel, .response-panel {
+      padding: 20px 24px;
+      overflow-y: auto;
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .request-panel { border-right: 1px solid var(--border); }
+
+    .panel-title {
+      font-size: 11px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: 1px; color: var(--muted);
+    }
+
+    .url-bar {
+      display: flex; align-items: center; gap: 10px;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 8px; padding: 10px 14px;
+    }
+    .url-method { font-size: 11px; font-weight: 700; color: var(--accent2); min-width: 40px; }
+    .url-text { font-size: 13px; color: var(--text); font-family: monospace; }
+
+    .body-editor {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 8px; padding: 12px;
+    }
+    .body-editor textarea {
+      width: 100%; background: transparent; border: none;
+      color: var(--accent2); font-family: 'Courier New', monospace;
+      font-size: 12px; line-height: 1.6; resize: vertical;
+      min-height: 120px; outline: none;
+    }
+
+    .send-btn {
+      width: 100%; padding: 12px;
+      background: linear-gradient(135deg, var(--accent), #5a52d5);
+      border: none; border-radius: 8px;
+      color: white; font-size: 14px; font-weight: 600;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .send-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(108,99,255,0.4); }
+    .send-btn:active { transform: translateY(0); }
+
+    .response-status {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .status-code {
+      font-size: 22px; font-weight: 700;
+    }
+    .status-200 { color: var(--success); }
+    .status-201 { color: var(--success); }
+    .status-400 { color: var(--warning); }
+    .status-401 { color: var(--warning); }
+    .status-403 { color: var(--danger); }
+    .status-404 { color: var(--danger); }
+    .status-409 { color: var(--warning); }
+    .status-500 { color: var(--danger); }
+
+    .response-body {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 8px; padding: 16px;
+      font-family: 'Courier New', monospace; font-size: 12px;
+      line-height: 1.7; white-space: pre-wrap; word-break: break-all;
+      flex: 1; min-height: 200px;
+    }
+    .json-key { color: #79b8ff; }
+    .json-str { color: #9ece6a; }
+    .json-num { color: #ff9e64; }
+    .json-bool { color: #bb9af7; }
+    .json-null { color: #f7768e; }
+
+    .empty-state {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; color: var(--muted);
+      gap: 12px; padding: 40px; text-align: center;
+    }
+    .empty-state .icon { font-size: 48px; opacity: 0.3; }
+    .empty-state p { font-size: 14px; }
+
+    .params-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+    }
+    .param-input {
+      padding: 8px 10px; border-radius: 6px;
+      background: var(--card); border: 1px solid var(--border);
+      color: var(--text); font-family: 'Inter', sans-serif; font-size: 12px;
+      outline: none; transition: border-color 0.15s;
+    }
+    .param-input:focus { border-color: var(--accent); }
+    .param-input::placeholder { color: var(--muted); }
+
+    .tag { 
+      display: inline-block; padding: 2px 8px; border-radius: 4px;
+      font-size: 11px; font-weight: 500;
+      background: rgba(108,99,255,0.1); color: var(--accent);
+    }
+
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">
+    <div class="logo-icon">💰</div>
+    <div>
+      <div class="logo-text">Finance Dashboard</div>
+      <div class="logo-sub">API Tester — localhost:3000</div>
+    </div>
+  </div>
+  <div class="status-pill" onclick="checkServer()">
+    <div class="status-dot" id="statusDot"></div>
+    <span id="statusText">Checking...</span>
+  </div>
+</div>
+
+<div class="container">
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="section-label">🔐 Auth</div>
+    <button class="endpoint-btn" onclick="loadEndpoint('POST','/api/auth/register','register')"><span class="method-badge POST">POST</span> Register</button>
+    <button class="endpoint-btn" onclick="loadEndpoint('POST','/api/auth/login','login')"><span class="method-badge POST">POST</span> Login</button>
+    <button class="endpoint-btn" onclick="loadEndpoint('GET','/api/auth/me','me')"><span class="method-badge GET">GET</span> My Profile</button>
+
+    <div class="section-label">📊 Dashboard</div>
+    <button class="endpoint-btn" onclick="loadEndpoint('GET','/api/dashboard/summary','')"><span class="method-badge GET">GET</span> Summary</button>
+    <button class="endpoint-btn" onclick="loadEndpoint('GET','/api/dashboard/by-category','')"><span class="method-badge GET">GET</span> By Category</button>
+    <button class="endpoint-btn" onclick="loadEndpoint('GET','/api/dashboard/trends?year=2024','')"><span class="method-badge GET">GET</span> Trends</button>
+    <button class="endpoint-btn" onclick="loadEndpoint('GET','/api/dashboard/recent','')"><span class="method-badge GET">GET</span> Recent</button>
+
+    <div class="section-label">📁 Records</div>
+    <button class="endpoint-btn" onclick="loadEndpoint('GET','/api/records?page=1&limit=5','')"><span class="method-badge GET">GET</span> List Records</button>
+    <button class="endpoint-btn" onclick="loadEndpoint('GET','/api/records?type=INCOME','')"><span class="method-badge GET">GET</span> Filter: Income</button>
+    <button class="endpoint-btn" onclick="loadEndpoint('GET','/api/records?type=EXPENSE','')"><span class="method-badge GET">GET</span> Filter: Expense</button>
+    <button class="endpoint-btn" onclick="loadEndpoint('POST','/api/records','createRecord')"><span class="method-badge POST">POST</span> Create Record</button>
+
+    <div class="section-label">👥 Users (Admin)</div>
+    <button class="endpoint-btn" onclick="loadEndpoint('GET','/api/users','')"><span class="method-badge GET">GET</span> List Users</button>
+    <button class="endpoint-btn" onclick="loadEndpoint('POST','/api/users','createUser')"><span class="method-badge POST">POST</span> Create User</button>
+
+    <div class="section-label">🔒 Access Control Tests</div>
+    <button class="endpoint-btn" onclick="loadEndpoint('GET','/api/dashboard/trends','viewer_test')"><span class="method-badge GET">GET</span> Viewer → Trends (403)</button>
+    <button class="endpoint-btn" onclick="loadEndpoint('POST','/api/records','viewer_create_test')"><span class="method-badge POST">POST</span> Viewer → Create (403)</button>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <!-- AUTH BAR -->
+    <div class="auth-bar">
+      <label>Login as:</label>
+      <select class="auth-select" id="userSelect">
+        <option value="admin">👑 Admin (admin@demo.com)</option>
+        <option value="analyst">📊 Analyst (analyst@demo.com)</option>
+        <option value="viewer">👁️ Viewer (viewer@demo.com)</option>
+      </select>
+      <button class="login-btn" onclick="quickLogin()">🔑 Login & Get Token</button>
+      <div class="token-display" id="tokenDisplay">No token yet — click Login first</div>
+    </div>
+
+    <div class="content">
+      <!-- REQUEST PANEL -->
+      <div class="request-panel">
+        <div class="panel-title">📤 Request</div>
+
+        <div>
+          <div class="url-bar">
+            <span class="url-method" id="reqMethod">GET</span>
+            <span class="url-text" id="reqUrl">Select an endpoint from the sidebar</span>
+          </div>
+        </div>
+
+        <div id="bodySection" style="display:none">
+          <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">Request Body (JSON)</div>
+          <div class="body-editor">
+            <textarea id="reqBody" placeholder="{}"></textarea>
+          </div>
+        </div>
+
+        <div id="notesSection" style="font-size:12px;color:var(--muted);padding:10px;background:var(--card);border-radius:8px;line-height:1.6;"></div>
+
+        <button class="send-btn" onclick="sendRequest()">⚡ Send Request</button>
+      </div>
+
+      <!-- RESPONSE PANEL -->
+      <div class="response-panel">
+        <div class="panel-title">📥 Response</div>
+
+        <div id="responseStatus" class="response-status" style="display:none">
+          <span class="status-code" id="statusCode"></span>
+          <div>
+            <div id="statusMsg" style="font-size:13px;font-weight:600;"></div>
+            <div id="responseTime" style="font-size:11px;color:var(--muted);"></div>
+          </div>
+        </div>
+
+        <div id="emptyState" class="empty-state">
+          <div class="icon">🚀</div>
+          <p>Select an endpoint and click <strong>Send Request</strong></p>
+          <p style="font-size:12px;">First login with admin to get a token!</p>
+        </div>
+
+        <div id="responseBody" class="response-body" style="display:none"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const BASE = 'http://localhost:3000';
+  let currentToken = '';
+  let currentMethod = 'GET';
+  let currentUrl = '';
+
+  const BODIES = {
+    login: JSON.stringify({ email: 'admin@demo.com', password: 'password123' }, null, 2),
+    register: JSON.stringify({ name: 'New User', email: 'newuser@test.com', password: 'password123' }, null, 2),
+    createRecord: JSON.stringify({ amount: 50000, type: 'INCOME', category: 'Consulting', date: '2024-07-01', notes: 'Test record from API tester' }, null, 2),
+    createUser: JSON.stringify({ name: 'Test User', email: 'test@demo.com', password: 'password123', role: 'ANALYST' }, null, 2),
+    me: null,
+    viewer_test: null,
+    viewer_create_test: JSON.stringify({ amount: 1000, type: 'INCOME', category: 'Test', date: '2024-01-01' }, null, 2),
+  };
+
+  const NOTES = {
+    login: '⚠️ After login, token is auto-saved. Use the Login button above for quick login.',
+    register: '✅ New users get VIEWER role by default.',
+    me: '🔐 Requires token. Click Login first.',
+    viewer_test: '🔒 Login as VIEWER then send — should get 403 FORBIDDEN',
+    viewer_create_test: '🔒 Login as VIEWER then send — should get 403 FORBIDDEN',
+    createRecord: '👑 Requires ADMIN role.',
+    createUser: '👑 Requires ADMIN role.',
+  };
+
+  function loadEndpoint(method, path, bodyKey) {
+    currentMethod = method;
+    currentUrl = BASE + path;
+    document.getElementById('reqMethod').textContent = method;
+    document.getElementById('reqUrl').textContent = path;
+
+    const bodySection = document.getElementById('bodySection');
+    const reqBody = document.getElementById('reqBody');
+    if (method !== 'GET' && BODIES[bodyKey]) {
+      bodySection.style.display = 'block';
+      reqBody.value = BODIES[bodyKey] || '';
+    } else {
+      bodySection.style.display = 'none';
+    }
+
+    const notes = document.getElementById('notesSection');
+    if (NOTES[bodyKey]) {
+      notes.textContent = NOTES[bodyKey];
+      notes.style.display = 'block';
+    } else {
+      notes.style.display = 'none';
+    }
+
+    document.querySelectorAll('.endpoint-btn').forEach(b => b.classList.remove('active'));
+    event.currentTarget.classList.add('active');
+  }
+
+  async function quickLogin() {
+    const user = document.getElementById('userSelect').value;
+    const emails = { admin: 'admin@demo.com', analyst: 'analyst@demo.com', viewer: 'viewer@demo.com' };
+    try {
+      const res = await fetch(`${BASE}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: emails[user], password: 'password123' })
+      });
+      const data = await res.json();
+      if (data.data?.token) {
+        currentToken = data.data.token;
+        const display = document.getElementById('tokenDisplay');
+        display.textContent = '✅ Token: ' + currentToken.substring(0, 50) + '...';
+        display.style.color = 'var(--accent2)';
+      }
+    } catch(e) {
+      document.getElementById('tokenDisplay').textContent = '❌ Server is not running! Run: npm run dev';
+    }
+  }
+
+  async function sendRequest() {
+    if (!currentUrl) return alert('Please select an endpoint from the sidebar first!');
+
+    const start = Date.now();
+    const method = currentMethod;
+    const body = document.getElementById('reqBody').value;
+
+    const headers = { 'Content-Type': 'application/json' };
+    if (currentToken) headers['Authorization'] = `Bearer ${currentToken}`;
+
+    const opts = { method, headers };
+    if (method !== 'GET' && body) opts.body = body;
+
+    document.getElementById('emptyState').style.display = 'none';
+    document.getElementById('responseBody').style.display = 'none';
+    document.getElementById('responseStatus').style.display = 'none';
+    document.getElementById('responseBody').textContent = 'Loading...';
+    document.getElementById('responseBody').style.display = 'block';
+
+    try {
+      const res = await fetch(currentUrl, opts);
+      const elapsed = Date.now() - start;
+      const data = await res.json();
+
+      const statusEl = document.getElementById('statusCode');
+      statusEl.textContent = res.status;
+      statusEl.className = 'status-code status-' + res.status;
+
+      const statusMsgs = { 200:'OK', 201:'Created', 400:'Bad Request', 401:'Unauthorized', 403:'Forbidden', 404:'Not Found', 409:'Conflict', 500:'Server Error' };
+      document.getElementById('statusMsg').textContent = statusMsgs[res.status] || 'Unknown';
+      document.getElementById('responseTime').textContent = `${elapsed}ms`;
+      document.getElementById('responseStatus').style.display = 'flex';
+
+      const pretty = JSON.stringify(data, null, 2);
+      document.getElementById('responseBody').innerHTML = syntaxHighlight(pretty);
+    } catch(e) {
+      document.getElementById('responseBody').textContent = '❌ Error: Could not reach the server.\n\nMake sure the server is running:\n\nnpm run dev\n\nIn the Finance Dashboard folder.';
+    }
+  }
+
+  function syntaxHighlight(json) {
+    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, (match) => {
+      let cls = 'json-num';
+      if (/^"/.test(match)) {
+        cls = /:$/.test(match) ? 'json-key' : 'json-str';
+      } else if (/true|false/.test(match)) cls = 'json-bool';
+      else if (/null/.test(match)) cls = 'json-null';
+      return `<span class="${cls}">${match}</span>`;
+    });
+  }
+
+  async function checkServer() {
+    try {
+      const res = await fetch(`${BASE}/`);
+      const data = await res.json();
+      if (data.success) {
+        document.getElementById('statusDot').style.background = 'var(--accent2)';
+        document.getElementById('statusText').textContent = 'Server Online';
+      }
+    } catch(e) {
+      document.getElementById('statusDot').style.background = 'var(--danger)';
+      document.getElementById('statusText').textContent = 'Server Offline';
+    }
+  }
+
+  checkServer();
+</script>
+</body>
+</html>

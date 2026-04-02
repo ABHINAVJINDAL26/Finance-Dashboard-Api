@@ -1,0 +1,13 @@
+const ROLES = {
+  VIEWER: 'VIEWER',
+  ANALYST: 'ANALYST',
+  ADMIN: 'ADMIN',
+};
+
+const PAGINATION_DEFAULTS = {
+  PAGE: 1,
+  LIMIT: 20,
+  MAX_LIMIT: 100,
+};
+
+module.exports = { ROLES, PAGINATION_DEFAULTS };
